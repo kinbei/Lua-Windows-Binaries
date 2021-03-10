@@ -36,18 +36,24 @@ jobs:
         git-user-signingkey: true
         git-commit-gpgsign: true
   
+    - name: Get Lua Version
+      id: get-lua-version
+      run: |
+        echo "::set-output name=version::5.4.2"
+      shell: bash
+
     - uses: suisei-cn/actions-download-file@v1
       id: downloadfile
       name: Download the file
       env:
-          LUA_VERSION: 5.4.2
+          LUA_VERSION: ${{ steps.get-lua-version.outputs.version }}
       with:
         url: "http://www.lua.org/ftp/lua-${{env.LUA_VERSION}}.tar.gz"
         target: .
           
     - name: Make
       env:
-        LUA_VERSION: 5.4.2
+        LUA_VERSION: ${{ steps.get-lua-version.outputs.version }}
       run: |
         tar zxf lua-${{env.LUA_VERSION}}.tar.gz
         cd lua-${{env.LUA_VERSION}}
@@ -61,7 +67,7 @@ jobs:
 
     - name: Push
       env:
-          LUA_VERSION: 5.4.2
+          LUA_VERSION: ${{ steps.get-lua-version.outputs.version }}
       run: |
         mkdir -p Binaries
         cp lua-${{env.LUA_VERSION}}/src/*.exe Binaries/
