@@ -1,16 +1,13 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: Build
 
-# Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
   
 jobs:
@@ -22,24 +19,12 @@ jobs:
       with:
         update: true
         install: >-
-          git
-          base-devel
-
-    - uses: actions/checkout@v2
-    - run: git config --global user.email "kinbei@qq.com"
-    - run: git config --global user.name "kinbei"
-
-    - uses: crazy-max/ghaction-import-gpg@v3
-      with:
-        gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-        passphrase: ${{ secrets.GPG_PRIVATE_KEY_PASSPHRASE }}
-        git-user-signingkey: true
-        git-commit-gpgsign: true
-  
+          git base-devel zip
+ 
     - name: Get Lua Version
       id: get-lua-version
       run: |
-        echo "::set-output name=version::5.4.2"
+        echo "::set-output name=version::5.4.3"
       shell: bash
 
     - uses: suisei-cn/actions-download-file@v1
@@ -57,22 +42,20 @@ jobs:
       run: |
         tar zxf lua-${{env.LUA_VERSION}}.tar.gz
         cd lua-${{env.LUA_VERSION}}
-        make mingw
-
-
-    - name: Remove File
-      uses: JesseTG/rm@v1.0.2
-      with:
-        path: Binaries
-
-    - name: Push
-      env:
-          LUA_VERSION: ${{ steps.get-lua-version.outputs.version }}
+        make generic
+        
+    - name: Zip
+      shell: msys2 {0}
       run: |
-        mkdir -p Binaries
-        cp lua-${{env.LUA_VERSION}}/src/*.exe Binaries/
-        cp lua-${{env.LUA_VERSION}}/src/*.dll Binaries/
-        git add Binaries
-        git commit -m "Automated commit" -a
-        git push
+        zip -j Lua.zip lua/src/lua.exe
+
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.ACTIONS_REMOTE_BUILD_TOKEN }}
+        file: Lua.zip
+        asset_name: Lua.zip
+        tag: ${{ github.ref }}
+        overwrite: true
+        body: "Lua.exe"
         
