@@ -3,11 +3,6 @@
 name: Build
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
   workflow_dispatch:
   
 jobs:
@@ -45,9 +40,11 @@ jobs:
         make generic
         
     - name: Zip
+      env:
+        LUA_VERSION: ${{ steps.get-lua-version.outputs.version }}
       shell: msys2 {0}
       run: |
-        zip -j Lua.zip lua/src/lua.exe
+        zip -j Lua.zip lua-${{env.LUA_VERSION}}/src/lua.exe
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
