@@ -17,7 +17,7 @@ jobs:
     - name: Get Lua Version
       id: get-lua-version
       run: |
-        echo "::set-output name=version::5.4.4"
+        echo "::set-output name=version::5.4.6"
       shell: bash
 
     - uses: suisei-cn/actions-download-file@v1
