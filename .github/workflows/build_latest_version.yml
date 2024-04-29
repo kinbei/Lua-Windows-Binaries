@@ -25,28 +25,55 @@ jobs:
         package_name=$(python - <<EOF
         import requests
         import sys
+        import os
         from lxml import html
+        from requests.exceptions import RequestException
         
-        response = requests.get("https://www.lua.org/ftp/")
-        html_content = response.text
+        response = None
+        try:
+            response = requests.get("https://www.lua.org/ftp/")
+        except RequestException as e:
+            output_file = os.getenv('GITHUB_OUTPUT')
+            with open(output_file, "a") as file:
+                file.write("STATUS=failure\n")
+                file.write("ERRMSG=Request failed with error {}\n".format(str(e)))
+            sys.exit(0)
         
-        tree = html.fromstring(html_content)
-        td_element = tree.xpath("/html/body/table[1]/tr[2]/td[1]/a")
-        
-        if td_element:
-            package_name = td_element[0].text_content().strip()
-            print(package_name)
+        if response and response.status_code == 200:
+            html_content = response.text
+            output_file = os.getenv('GITHUB_OUTPUT')
+            tree = html.fromstring(html_content)
+            td_element = tree.xpath("/html/body/table[1]/tr[2]/td[1]/a")
+    
+            if td_element:
+                package_name = td_element[0].text_content().strip()
+                version = os.path.basename(package_name).replace(".tar.gz", "")
+                with open(output_file, "a") as file:
+                    file.write("LUA_PACKAGE_NAME={}\n".format(package_name))
+                    file.write("LUA_VERSION={}\n".format(version))
+                    file.write("STATUS=success\n")
+            else:
+                with open(output_file, "a") as file:
+                    file.write("STATUS=failure\n")
+                    file.write("ERRMSG=No package found\n")
         else:
-            sys.stderr.write("Unable to find Lua version.\n")
-            sys.exit(1)
+            output_file = os.getenv('GITHUB_OUTPUT')
+            with open(output_file, "a") as file:
+                file.write("STATUS=failure\n")
+                file.write("ERRMSG=Request failed with status code {}\n".format(response.status_code))
         EOF
         )
 
-        echo "LUA_PACKAGE_NAME=$package_name" >> $GITHUB_OUTPUT
-        echo "LUA_VERSION=$(basename "$package_name" .tar.gz)" >> $GITHUB_OUTPUT
+    - name: Check on failures
+      if: steps.extract_lua_version.outputs.STATUS == 'failure'
+      run: |
+        echo @"
+        Unable to find Lua version: ${{ steps.extract_lua_version.outputs.ERRMSG }}
+        "@
+        exit 1
 
     - name: Download Lua
-      uses: suisei-cn/actions-download-file@v1
+      uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9 # 1.6.0
       with:
         url: "http://www.lua.org/ftp/${{ steps.extract_lua_version.outputs.LUA_PACKAGE_NAME }}"
         target: .
