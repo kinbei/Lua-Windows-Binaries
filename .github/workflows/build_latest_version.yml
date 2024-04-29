@@ -97,3 +97,60 @@ jobs:
         tag: ${{ steps.extract_lua_version.outputs.LUA_VERSION }}
         overwrite: true
         body: "Lua.exe"
+
+    - name: Get latest release info
+      id: get_latest_release_info
+      shell: bash
+      run: |
+        python - <<EOF
+        import requests
+        import os
+        response = requests.get("https://api.github.com/repos/kinbei/Lua-Windows-Binaries/releases/latest")
+        data = response.json()
+        download_url = data['assets'][0]['browser_download_url']
+        output_file = os.getenv('GITHUB_OUTPUT')
+        with open(output_file, "a") as file:
+            file.write(f"DOWNLOAD_URL={download_url}\n")
+        EOF
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.ACTIONS_REMOTE_BUILD_TOKEN }}
+
+    - name: Update README
+      shell: bash
+      run: |
+        python - <<EOF
+        import requests
+        import os
+        response = requests.get("https://api.github.com/repos/kinbei/Lua-Windows-Binaries/releases/latest")
+        data = response.json()
+        download_url = data['assets'][0]['browser_download_url']
+        output_file = os.getenv('GITHUB_WORKSPACE') + "/README.md"
+        with open(output_file, "r+") as file:
+            lines = file.readlines()
+            if len(lines) >= 3:
+                lines[2] = f"[![badge](https://img.shields.io/github/downloads/kinbei/Lua-Windows-Binaries/total?style=flat-square&logo=GitHub)]({download_url})\n"
+                file.seek(0)
+                file.writelines(lines)
+            else:
+                print(f"Not enough lines, Number of lines: {len(lines)}")
+        EOF
+
+    - name: Import GPG key
+      id: import-gpg
+      uses: crazy-max/ghaction-import-gpg@v6
+      with:
+        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+        passphrase: ${{ secrets.PASSPHRASE }}
+        git_user_signingkey: true
+        git_commit_gpgsign: true
+
+    - name: Commit changes
+      run: |
+        git config --local user.email "kinbei@qq.com"
+        git config --local user.name "kinbei"
+        git add README.md
+        git commit -m "Update README.md with latest release"
+        git push
