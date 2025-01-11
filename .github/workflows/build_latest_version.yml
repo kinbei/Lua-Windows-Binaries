@@ -2,9 +2,13 @@ name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      lua_version:
+        description: "Lua version to use (optional)"
+        required: false
   schedule:
     - cron: '0 0 * * 1'
-  
+
 jobs:
   build:
     runs-on: windows-latest
@@ -22,7 +26,11 @@ jobs:
       id: extract_lua_version
       shell: bash
       run: |
-        package_name=$(python - <<EOF
+        [[ -n "${{ github.event.inputs.lua_version }}" ]] && {
+          echo "LUA_VERSION=lua-${{ github.event.inputs.lua_version }}" >> $GITHUB_OUTPUT
+          echo "LUA_PACKAGE_NAME=lua-${{ github.event.inputs.lua_version }}.tar.gz" >> $GITHUB_OUTPUT
+          echo "STATUS=success" >> $GITHUB_OUTPUT
+        } || python - <<EOF
         import requests
         import sys
         import os
@@ -62,7 +70,6 @@ jobs:
                 file.write("STATUS=failure\n")
                 file.write("ERRMSG=Request failed with status code {}\n".format(response.status_code))
         EOF
-        )
 
     - name: Check on failures
       if: steps.extract_lua_version.outputs.STATUS == 'failure'
