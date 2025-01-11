@@ -1,6 +1,6 @@
 [![badge](https://img.shields.io/github/actions/workflow/status/kinbei/Lua-Windows-Binaries/build_latest_version.yml?style=flat-square&logo=GitHub)](https://github.com/kinbei/Lua-Windows-Binaries/actions/workflows/build_latest_version.yml)
 [![badge](https://img.shields.io/github/v/release/kinbei/Lua-Windows-Binaries?style=flat-square&logo=GitHub)](https://github.com/kinbei/Lua-Windows-Binaries/releases/latest)
-[![badge](https://img.shields.io/github/downloads/kinbei/Lua-Windows-Binaries/total?style=flat-square&logo=GitHub)](https://github.com/kinbei/Lua-Windows-Binaries/releases/download/lua-5.4.7/Lua.zip)
+[![badge](https://img.shields.io/github/downloads/kinbei/Lua-Windows-Binaries/total?style=flat-square&logo=GitHub)](https://github.com/kinbei/Lua-Windows-Binaries/releases/download/lua-5.3.6/Lua.zip)
 
 ## Acknowledgements
 
